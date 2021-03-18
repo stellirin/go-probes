@@ -44,6 +44,11 @@ func (p *Probe) Chan() chan<- status {
 	return p.channel
 }
 
+// IsUp tests if the probe status is UP.
+func (p *Probe) IsUp() bool {
+	return p.status == Up
+}
+
 // IsDown tests if the probe status is DOWN.
 func (p *Probe) IsDown() bool {
 	return p.status == Down
@@ -101,7 +106,7 @@ func ReadinessProbe(p *Probe, tests ...func() error) error {
 // The return parameter may be used for tests.
 func LivenessProbe(liveness *Probe, readiness ...*Probe) error {
 	for _, p := range readiness {
-		if p.IsDown() && p.Downtime() > 5*time.Minute {
+		if p.IsUp() && !p.IsDown() && p.Downtime() > 5*time.Minute {
 			err := fmt.Errorf("%s probe down for too long", p.name)
 			liveness.Chan() <- Down
 			return err
