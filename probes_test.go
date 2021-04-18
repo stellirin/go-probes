@@ -177,4 +177,5 @@ func Test_LivenessProbe(t *testing.T) {
 // Everything this function does is tested above.
 func Test_StartProbes(t *testing.T) {
 	go StartProbes(func() error { return nil })
+	time.Sleep(10 * time.Millisecond)
 }
