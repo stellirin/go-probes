@@ -63,7 +63,7 @@ func Test_RunProbe(t *testing.T) {
 	}
 }
 
-func TestReadinessProbe(t *testing.T) {
+func Test_ReadinessProbe(t *testing.T) {
 	type args struct {
 		tests []func() error
 	}
@@ -116,7 +116,7 @@ func TestReadinessProbe(t *testing.T) {
 	}
 }
 
-func TestLivenessProbe(t *testing.T) {
+func Test_LivenessProbe(t *testing.T) {
 	type args struct {
 		probes []*Probe
 	}
@@ -138,10 +138,21 @@ func TestLivenessProbe(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "fail",
+			name: "fail-short",
 			args: args{
 				probes: []*Probe{{
-					name:   "fail",
+					name:   "fail-short",
+					status: Down,
+					time:   time.Now(),
+				}},
+			},
+			wantErr: false,
+		},
+		{
+			name: "fail-long",
+			args: args{
+				probes: []*Probe{{
+					name:   "fail-long",
 					status: Down,
 					time:   time.Now().Add(-10 * time.Minute),
 				}},
@@ -160,4 +171,10 @@ func TestLivenessProbe(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Dummy test for coverage.
+// Everything this function does is tested above.
+func Test_StartProbes(t *testing.T) {
+	go StartProbes(func() error { return nil })
 }

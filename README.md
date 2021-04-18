@@ -17,35 +17,37 @@ go get -u czechia.dev/probes
 package main
 
 import (
-	"time"
+	"errors"
+	"net/http"
 
 	"czechia.dev/probes"
-	"github.com/gofiber/fiber/v2"
+	"github.com/labstack/echo/v4"
 )
 
-func NewFiberRoute(p *probes.Probe) func(ctx *fiber.Ctx) error {
-	return func(ctx *fiber.Ctx) error {
-		switch p.IsDown() {
-		case false:
-			return ctx.SendStatus(fiber.StatusOK)
-		case true:
-			return ctx.SendStatus(fiber.StatusServiceUnavailable)
-		}
+const alive = true
+
+func isAlive() error {
+	if alive {
+		return nil
 	}
+	return errors.New("dead")
 }
 
 func main() {
-	go probes.RunProbe(probes.Liveness)
-	go probes.RunProbe(probes.Readiness)
+	go probes.StartProbes(isAlive)
 
-	app := fiber.New()
-	app.Get("/liveness", NewFiberRoute(probes.Liveness))
-	app.Get("/readiness", NewFiberRoute(probes.Readiness))
-	go app.Listen(":8080")
+	e := echo.New()
+	e.GET("/liveness", probeRoute(probes.Liveness))
+	e.GET("/readiness", probeRoute(probes.Readiness))
+	e.Start(":8080")
+}
 
-	for ; true; <-time.NewTicker(3 * time.Second).C {
-		probes.LivenessProbe(probes.Liveness)
-		probes.ReadinessProbe(probes.Readiness, func() error { return nil })
+func probeRoute(p *probes.Probe) echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		if p.IsUp() {
+			return ctx.NoContent(http.StatusOK)
+		}
+		return ctx.NoContent(http.StatusServiceUnavailable)
 	}
 }
 ```

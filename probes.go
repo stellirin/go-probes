@@ -49,11 +49,6 @@ func (p *Probe) IsUp() bool {
 	return p.status == Up
 }
 
-// IsDown tests if the probe status is DOWN.
-func (p *Probe) IsDown() bool {
-	return p.status == Down
-}
-
 // Downtime is the duration since the probe went DOWN.
 func (p *Probe) Downtime() time.Duration {
 	return time.Since(p.time)
@@ -106,14 +101,30 @@ func ReadinessProbe(p *Probe, tests ...func() error) error {
 // The return parameter may be used for tests.
 func LivenessProbe(liveness *Probe, readiness ...*Probe) error {
 	for _, p := range readiness {
-		if !p.IsUp() && p.IsDown() && p.Downtime() > 5*time.Minute {
-			err := fmt.Errorf("%s probe down for too long", p.name)
-			liveness.Chan() <- Down
-			return err
+		if p.IsUp() {
+			continue
 		}
+		if p.Downtime() < 5*time.Minute {
+			continue
+		}
+
+		liveness.Chan() <- Down
+		return fmt.Errorf("%s probe down for too long", p.name)
 	}
 
 	// All tests passed
 	liveness.Chan() <- Up
 	return nil
+}
+
+// StartProbes is a convenience function to run the default Readiness
+// and Liveness probes and test them every 3*time.Second using the given test functions.
+func StartProbes(tests ...func() error) {
+	go RunProbe(Liveness)
+	go RunProbe(Readiness)
+
+	for ; true; <-time.NewTicker(3 * time.Second).C {
+		LivenessProbe(Liveness)
+		ReadinessProbe(Readiness, tests...)
+	}
 }
