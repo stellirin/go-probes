@@ -1,8 +1,9 @@
 # Probes
 
-[![coverage](https://codecov.io/gh/stellirin/go-probes/branch/main/graph/badge.svg?token=9ATrVTllue)](https://codecov.io/gh/stellirin/go-probes)
-[![tests](https://github.com/stellirin/go-probes/workflows/Go/badge.svg)](https://github.com/stellirin/go-probes/actions?query=workflow%3AGo)
+[![reference](https://pkg.go.dev/badge/czechia.dev/probes.svg)](https://pkg.go.dev/czechia.dev/probes)
 [![report](https://goreportcard.com/badge/czechia.dev/probes)](https://goreportcard.com/report/czechia.dev/probes)
+[![tests](https://github.com/stellirin/go-probes/workflows/Go/badge.svg)](https://github.com/stellirin/go-probes/actions?query=workflow%3AGo)
+[![coverage](https://codecov.io/gh/stellirin/go-probes/branch/main/graph/badge.svg?token=9ATrVTllue)](https://codecov.io/gh/stellirin/go-probes)
 
 Probes is a simple package to implement readiness and liveness endpoints.
 
