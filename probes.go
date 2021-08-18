@@ -19,18 +19,20 @@ type Probe struct {
 	time    time.Time
 }
 
+type ProbeFunc func() error
+
 var (
 	Liveness  *Probe
 	Readiness *Probe
 )
 
 func init() {
-	Liveness = NewProbe("liveness", Up)
-	Readiness = NewProbe("readiness", Down)
+	Liveness = New("liveness", Up)
+	Readiness = New("readiness", Down)
 }
 
-// NewProbe initializes a new status probe.
-func NewProbe(n string, s status) *Probe {
+// New initializes a new probe with an initial status.
+func New(n string, s status) *Probe {
 	return &Probe{
 		name:    n,
 		status:  s,
@@ -56,34 +58,31 @@ func (p *Probe) Downtime() time.Duration {
 
 // RunProbe waits for status messages on the probe channel.
 //
-// The probe status is updated if the recieved status differs from the current status.
-// The probe timestamp is also updated when the status changes to DOWN.
+// The probe status is updated to reflect the current status.
+// The probe timestamp is also updated when the status is UP.
 //
 // This function typically runs in its own goroutine.
 // The return parameter may be used for tests.
 func RunProbe(p *Probe) error {
 	for s := range p.channel {
-		if s == p.status {
-			continue
+		if s == Up {
+			p.time = time.Now()
 		}
 
 		p.status = s
-		if s == Down {
-			p.time = time.Now()
-		}
 	}
 
 	return fmt.Errorf("%s probe was stopped with %s status", p.name, p.status)
 }
 
-// ReadinessProbe runs any test functions passed to it.
+// ReadinessProbe runs any probe functions passed to it.
 // If any of the tests fail the given probe is set to DOWN.
 //
 // This function typically runs in its own goroutine.
 // The return parameter may be used for tests.
-func ReadinessProbe(p *Probe, tests ...func() error) error {
-	for _, t := range tests {
-		if err := t(); err != nil {
+func ReadinessProbe(p *Probe, pf ...ProbeFunc) error {
+	for _, probeFunc := range pf {
+		if err := probeFunc(); err != nil {
 			p.Chan() <- Down
 			return err
 		}
@@ -118,13 +117,13 @@ func LivenessProbe(liveness *Probe, readiness ...*Probe) error {
 }
 
 // StartProbes is a convenience function to run the default Readiness
-// and Liveness probes and test them every 3*time.Second using the given test functions.
-func StartProbes(tests ...func() error) {
+// and Liveness probes every 3 seconds using the given probe functions.
+func StartProbes(pf ...ProbeFunc) {
 	go RunProbe(Liveness)
 	go RunProbe(Readiness)
 
 	for ; true; <-time.NewTicker(3 * time.Second).C {
 		LivenessProbe(Liveness)
-		ReadinessProbe(Readiness, tests...)
+		ReadinessProbe(Readiness, pf...)
 	}
 }

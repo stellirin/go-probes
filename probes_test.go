@@ -19,7 +19,7 @@ func Test_RunProbe(t *testing.T) {
 		{
 			name: "up-to-up",
 			args: args{
-				p: NewProbe("up-to-up", Up),
+				p: New("up-to-up", Up),
 				s: Up,
 				e: "up-to-up probe was stopped with UP status",
 			},
@@ -27,7 +27,7 @@ func Test_RunProbe(t *testing.T) {
 		{
 			name: "up-to-down",
 			args: args{
-				p: NewProbe("up-to-down", Up),
+				p: New("up-to-down", Up),
 				s: Down,
 				e: "up-to-down probe was stopped with DOWN status",
 			},
@@ -35,7 +35,7 @@ func Test_RunProbe(t *testing.T) {
 		{
 			name: "down-to-down",
 			args: args{
-				p: NewProbe("down-to-down", Down),
+				p: New("down-to-down", Down),
 				s: Down,
 				e: "down-to-down probe was stopped with DOWN status",
 			},
@@ -43,7 +43,7 @@ func Test_RunProbe(t *testing.T) {
 		{
 			name: "down-to-up",
 			args: args{
-				p: NewProbe("down-to-up", Down),
+				p: New("down-to-up", Down),
 				s: Up,
 				e: "down-to-up probe was stopped with UP status",
 			},
@@ -65,7 +65,7 @@ func Test_RunProbe(t *testing.T) {
 
 func Test_ReadinessProbe(t *testing.T) {
 	type args struct {
-		tests []func() error
+		tests []ProbeFunc
 	}
 	tests := []struct {
 		name    string
@@ -75,7 +75,7 @@ func Test_ReadinessProbe(t *testing.T) {
 		{
 			name: "pass all",
 			args: args{
-				tests: []func() error{
+				tests: []ProbeFunc{
 					func() error { return nil },
 					func() error { return nil },
 				},
@@ -85,7 +85,7 @@ func Test_ReadinessProbe(t *testing.T) {
 		{
 			name: "fail first",
 			args: args{
-				tests: []func() error{
+				tests: []ProbeFunc{
 					func() error { return errors.New("first") },
 					func() error { return nil },
 				},
@@ -95,7 +95,7 @@ func Test_ReadinessProbe(t *testing.T) {
 		{
 			name: "fail second",
 			args: args{
-				tests: []func() error{
+				tests: []ProbeFunc{
 					func() error { return nil },
 					func() error { return errors.New("second") },
 				},
@@ -104,7 +104,7 @@ func Test_ReadinessProbe(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		p := NewProbe("test", Down)
+		p := New("test", Down)
 		defer close(p.Chan())
 		go RunProbe(p)
 
@@ -161,7 +161,7 @@ func Test_LivenessProbe(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		p := NewProbe("test", Up)
+		p := New("test", Up)
 		defer close(p.channel)
 		go RunProbe(p)
 
